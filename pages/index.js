@@ -4,7 +4,7 @@ import Footer from '../components/AppFooter';
 import Screen from '../components/AppScreen';
 import Page from '../components/AppPage';
 import Container from '../components/AppContainer';
-import Preview from '../components/blog/preview';
+import Preview from '../components/blog/Preview';
 import { components } from '../components/blog/Components';
 
 function importAll(r) {
@@ -57,6 +57,6 @@ export default () => (
   </Page>
 );
 
-export const config = {
-  amp: true
-};
+// export const config = {
+//   amp: true
+// };

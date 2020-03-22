@@ -1,0 +1,63 @@
+import { meta } from '../../blog/blog-renewed.meta.mdx'
+import { author } from '../../authors/ryoma-hoshino'
+import withPost from '../../modules/hoc/withPost'
+
+import Image from './AppImage';
+
+export const config = {
+  amp: true
+}
+
+export default withPost({ ...meta, ...author })
+
+<Image
+  src="/static/ohoshi-logo.png"
+  height={height}
+  width={width}
+  margin={0}
+>
+</Image>
+
+# ブログをリニューアルしました。
+
+## リプレイスのモチベーション
+- 旧ブログ(Wordpress)の維持コスト
+- 個人的な技術スタックが溜まってきたこと
+- AMPネイティブなブログを作ってみたかった
+- Next.jsをもっと使いこなせるようになりたい
+
+## 技術スタック
+- Next.js
+- MDX
+- AMP
+- Now
+
+## 技術選定の道のり
+1. Wordpress  
+- 素早くまとまったコンテンツを構築できる。
+- が、サーバー代(月5000円くらい)がしんどい
+- フロントエンドっぽくちゃんとやりたい
+
+2. Nuxt.js x Firestore  
+- AMP, PWAまわりのサポートがいい感じだった
+- Universal JSなノリでいい感じだと思った
+- Dash Board作るのがめんどうだった
+
+3. Nuxt.js x Contentful  
+- コンテンツをいい感じに宣言するだけで良さげなかんじのものができた
+- 画像周りだったり、デザインの細かいハンドリングがむずかった
+↪︎そのあたり、Contentful x JSXらへんをうまく組み合わせてやってみたい
+
+4. Next.js x MDX  
+- コンテンツの管理がMarkdownで可能、JSXで細かいデザインのハンドリングが可能
+- Next.jsをやりたいというモチベーション
+- AMPとかもいいかんじにハンドリングできるのも○
+
+## 参考
+- [mdx](https://mdxjs.com/)
+- [Next.js Get Started](https://nextjs.org/learn/basics/getting-started)
+
+
+スキンケアとコスメで私の世界が色めきました。
+やろうか迷ってる人、なにか新しいこと始めたい人に見て欲しいです。こんな考えもあるんだ！みたいな感じで受け取ってくれると嬉しいです。
+美容は自分の可能性を切り開く。

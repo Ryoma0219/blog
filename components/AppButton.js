@@ -13,7 +13,7 @@ const buttonStyle = css`
     padding: 0.25rem 0.5rem;
     margin: -0.25rem -0.5rem;
     border-radius: 7px;
-    color: #0070f3;
+    color: #25d96f;
     background-color: transparent;
     border: none;
     font-size: inherit;
@@ -22,7 +22,7 @@ const buttonStyle = css`
     outline: none;
   }
   .btn:hover {
-    color: #0070f3;
+    color: rgba(37, 217, 111, 0.8);
     background: rgba(0, 118, 255, 0.1);
   }
   .btn.invert {
@@ -31,12 +31,12 @@ const buttonStyle = css`
     height: 2.81rem;
     line-height: 2.8rem;
     border-radius: 7px;
-    background-color: #0070f3;
+    background-color: rgba(37, 217, 111, 0.8);
     box-shadow: 0 4px 14px 0 rgba(0, 118, 255, 0.39);
     color: white;
   }
   .btn.invert:hover {
-    background: rgba(0, 118, 255, 0.9);
+    background: rgba(37, 217, 111, 0.8);
     box-shadow: 0 6px 20px rgba(0, 118, 255, 0.23);
   }
   .btn.invert:active {

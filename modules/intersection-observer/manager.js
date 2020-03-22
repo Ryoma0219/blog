@@ -20,7 +20,6 @@ const manager = (function makeManager() {
   function intersectionCallback(entries, observer) {
     for (let entry of entries) {
       const handlers = getObserverTargets(observer);
-      console.log(handlers)
       const handler = handlers.get(entry.target);
       if (handler) {
         handler(entry);

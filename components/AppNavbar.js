@@ -1,13 +1,15 @@
 import Link from 'next/link';
 
 import Container from './AppContainer';
-import Logo from './AppLogo';
+import AppLogo from './AppLogo';
 
 const Navbar = () => (
   <Container center>
     <nav>
       <Link href="/">
-        <Logo className="visually-hidden" aria-hidden="true" />
+        <a>
+          <AppLogo />
+        </a>
       </Link>
     </nav>
 
@@ -15,7 +17,7 @@ const Navbar = () => (
       nav {
         position: relative;
         flex: 1;
-        height: 80px;
+        height: 72px;
         display: flex;
         align-items: center;
       }
@@ -38,7 +40,7 @@ const Navbar = () => (
       }
 
       .links a.selected {
-        color: #0070f3;
+        color: #25d96f;
         font-weight: 600;
       }
 

@@ -33,11 +33,11 @@ class Image extends Component {
       oversize = true,
       float,
       lazy,
+      authorIcon,
       ...rest
     } = this.props;
 
     const aspectRatio = `${String((height / width) * 100)}%`;
-
     return (
       <IObserver
         once
@@ -81,6 +81,9 @@ class Image extends Component {
                     width={width}
                     height={height}
                     alt={rest.alt}
+                    className={classNames({
+                      authorIcon: authorIcon && authorIcon
+                    })}
                   />
                 )
               ) : this.state.src ? (
@@ -151,7 +154,12 @@ class Image extends Component {
                   margin-${float}: -150px;
                 }
               }
+              .authorIcon {
+                border-radius: 50%;
+                margin-right: 8px;
+              }
             `}
+            
           </style>
         </figure>
       </IObserver>

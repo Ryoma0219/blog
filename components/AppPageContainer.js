@@ -47,10 +47,10 @@ const PageContainer = ({ title, description, children }) => {
           html,
           body {
             background-color: #fff;
-            color: #111;
+            color: #112;
           }
           ::selection {
-            background-color: #0070f3;
+            background-color: #25d96f;
             color: #fff;
           }
           [role='grid']:focus {
@@ -65,7 +65,7 @@ const PageContainer = ({ title, description, children }) => {
             margin: 0;
           }
           a {
-            color: #0074de;
+            color: #25d96f;
             text-decoration: none;
             transition: color 0.2s ease;
           }
@@ -86,59 +86,10 @@ const PageContainer = ({ title, description, children }) => {
           pre code:after {
             content: none;
           }
-          .demo-footer .note code {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 0.2rem;
-            margin: 0 0.1rem;
-            border-radius: 2px;
-          }
           iframe {
             width: 100%;
             height: 100%;
             border: none;
-          }
-          .subtitle {
-            color: #696969;
-          }
-          .mute {
-            color: #696969;
-          }
-          .tc {
-            text-align: center;
-          }
-          .row {
-            display: flex;
-            align-items: center;
-            margin: 0 -1.5rem;
-          }
-          .column {
-            flex: 1;
-            padding: 0 1.5rem;
-          }
-          .display-none {
-            display: none;
-          }
-          .display-mobile {
-            display: none;
-          }
-          .display-tablet {
-            display: none;
-          }
-          @media screen and (max-width: 640px) {
-            .display-mobile {
-              display: unset;
-            }
-            .hide-mobile {
-              display: none;
-            }
-          }
-          @media screen and (max-width: 960px) {
-            .display-tablet {
-              display: unset;
-            }
-            .hide-tablet {
-              display: none;
-            }
           }
           a[role='button'] {
             -webkit-user-select: none;
@@ -147,15 +98,11 @@ const PageContainer = ({ title, description, children }) => {
             -khtml-user-select: none;
             user-select: none;
           }
-          .no-tap-highlight,
           a {
             -webkit-touch-callout: none;
             -ms-touch-action: pan-y;
             touch-action: pan-y;
             -webkit-tap-highlight-color: transparent;
-          }
-          .no-tap-callout {
-            -webkit-touch-callout: none;
           }
           .no-drag {
             user-drag: none;
