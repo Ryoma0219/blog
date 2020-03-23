@@ -2,21 +2,11 @@ import { meta } from '../../blog/blog-renewed.meta.mdx'
 import { author } from '../../authors/ryoma-hoshino'
 import withPost from '../../modules/hoc/withPost'
 
-import Image from './AppImage';
-
 export const config = {
   amp: true
 }
 
 export default withPost({ ...meta, ...author })
-
-<Image
-  src="/static/ohoshi-logo.png"
-  height={height}
-  width={width}
-  margin={0}
->
-</Image>
 
 # ブログをリニューアルしました。
 
