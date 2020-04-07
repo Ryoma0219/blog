@@ -1,5 +1,7 @@
 import React from "react";
 
+import { useAmp } from "next/amp";
+
 import Footer from "../components/AppFooter";
 import Screen from "../components/AppScreen";
 import Page from "../components/AppPage";
@@ -55,7 +57,8 @@ export default () => (
       image="/static/twitter-cards/ohoshi-logo.jpg"
       title="Blog | Ohoshi.me"
       url="https://blog.ohoshi.me"
-      description="The Ohoshi Blog" />
+      description="The Ohoshi Blog"
+    />
     <Screen offset={74}>
       <Container wide>{items}</Container>
     </Screen>

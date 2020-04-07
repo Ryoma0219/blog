@@ -9,6 +9,8 @@ export const config = {
 
 export default withPost({ ...meta, ...author });
 
+(旧ブログから移行しました。)
+
 Service Worker は PWA(Progressive Web App)のオフライン操作や Push 通知を実装するための機能です。JavaScript で実装を行いますが、ブラウザとは別プロセスでバックグラウンドで動作するのが特徴です。
 オフライン操作の実現は巧みなキャッシュハンドリングによってなされています。
 Service Worker の基本的な書き方を学習したので、備忘録的な形でこのブログに残します。 PWA の話も気が向いたら残せたらと！
@@ -22,28 +24,6 @@ Github: [https://github.com/Ryoma0219/simple-pwa](https://github.com/Ryoma0219/
 ### Service Worker の確認方法
 
 Service Worker とキャッシュの状態は、Web インスペクタの Application タブで確認することができます。
-
-Service Worker の状態
-
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2019-05-02-22.05.07.png"
-    width="1024"
-    height="520"
-    alt=""
-  />
-</figure>
-
-Cache の状態
-
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2019-05-02-22.05.19.png"
-    width="1024"
-    height="416"
-    alt=""
-  />
-</figure>
 
 ### Service Worker を書いていく
 
@@ -100,14 +80,12 @@ self.addEventListener("install", function (event) {
 
 実際に Web インスペクタの Cache Storage を見てみると以下のようになっていることがわかります。 Cache Storage には指定したキャッシュ空間が定義され、実際のキャッシュファイルが path-value 形式で保管されています。
 
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2019-05-03-17.53.53.png"
-    width="300"
-    height="254"
-    alt=""
-  />
-</figure>
+<Image
+  src="/static/blog/service-worker/3.png"
+  width="300"
+  height="254"
+  alt=""
+/>
 
 **2-2. activate イベント**
 
@@ -180,43 +158,35 @@ match しない場合はそれ以下のコードで fetch Request をし、通�
 
 Cache 名は"sample-v1" 初期のキャッシュ対象は、"index.html"と、"css/style.css"としました。
 
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-17.53.42.png"
-    width="300"
-    height="166"
-    alt=""
-  />
-</figure>
+<Image
+  src="/static/blog/service-worker/4.png"
+  width="300"
+  height="166"
+  alt=""
+/>
 
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-17.53.53.png"
-    width="300"
-    height="254"
-    alt=""
-  />
-</figure>
+<Image
+  src="/static/blog/service-worker/5.png"
+  width="300"
+  height="254"
+  alt=""
+/>
 
 **初めての訪問 **Cache Storage には、"index.html"と"css/style.css"が保管されていることがわかります。初めての訪問では、fetch イベントは走らないようにしています。
 
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-17.54.09.png"
-    width="300"
-    height="171"
-    alt=""
-  />
-</figure>
+<Image
+  src="/static/blog/service-worker/6.png"
+  width="300"
+  height="171"
+  alt=""
+/>
 
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-17.54.16.png"
-    width="300"
-    height="232"
-    alt=""
-  />
-</figure>
+<Image
+  src="/static/blog/service-worker/7.png"
+  width="300"
+  height="232"
+  alt=""
+/>
 
 **2 回目の訪問 **"index.html"と、"css/style.css"はキャッシュされたものが使用され、キャッシュに存在しない"main.js"はリクエストを行い、新たにキャッシュとして保管されています。
 
@@ -226,23 +196,19 @@ Service Worker が正常に動作し、ファイルがキャッシュされて�
 
 古いキャッシュを削除する'activate'イベントの前に'install'イベントが走るので、一時的にキャッシュ名は 2 つになります。 その後の'activate'イベントで'sample-v1'キャッシュは削除されていることが確認できました！
 
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-18.43.27.png"
-    width="300"
-    height="171"
-    alt=""
-  />
-</figure>
+<Image
+  src="/static/blog/service-worker/8.png"
+  width="300"
+  height="171"
+  alt=""
+/>
 
-<figure class="wp-block-image">
-  <Image
-    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-18.43.39.png"
-    width="300"
-    height="173"
-    alt=""
-  />
-</figure>
+<Image
+  src="/static/blog/service-worker/9.png"
+  width="300"
+  height="173"
+  alt=""
+/>
 
 ### さいごに
 
