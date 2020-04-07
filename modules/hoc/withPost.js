@@ -1,17 +1,18 @@
-import React from 'react';
-import { MDXProvider } from '@mdx-js/react';
+import React from "react";
+import { MDXProvider } from "@mdx-js/react";
 
-import Page from '../../components/AppPage';
-import Container from '../../components/AppContainer';
-import Button from '../../components/AppButton';
-import Footer from '../../components/AppFooter';
-import Screen from '../../components/AppScreen';
-import Tags from '../../components/blog/Tags';
-import Image from '../../components/AppImage';
+import Page from "../../components/AppPage";
+import Container from "../../components/AppContainer";
+import Button from "../../components/AppButton";
+import Footer from "../../components/AppFooter";
+import Screen from "../../components/AppScreen";
+import Tags from "../../components/blog/Tags";
+import Image from "../../components/AppImage";
+import Social from "../../components/Social";
 
-import { components } from '../../components/blog/Components';
+import { components } from "../../components/blog/Components";
 
-const Author = meta => {
+const Author = (meta) => {
   return (
     <div className="author">
       <Image src={meta.avatar} width={40} height={40} margin={0} authorIcon />
@@ -81,7 +82,7 @@ const Author = meta => {
     </div>
   );
 };
-const HeaderImage = meta => (
+const HeaderImage = (meta) =>
   meta.eyeCatch && (
     <div>
       <style jsx>{`
@@ -94,18 +95,16 @@ const HeaderImage = meta => (
         }
       `}</style>
     </div>
-  )
-);
+  );
 
-export default meta => ({ children }) => (
+export default (meta) => ({ children }) => (
   <MDXProvider components={components}>
     <Page title={`Blog - ${meta.title} | Ohoshi.me`}>
+      <Social {...meta} />
       <Screen offset={74}>
         <Container padding>
           <h1 className="title">{meta.title}</h1>
-          {meta.eyeCatch && (
-            <HeaderImage {...meta} />
-          )}
+          {meta.eyeCatch && <HeaderImage {...meta} />}
           <Container small wide overflow>
             <Tags tags={meta.tags} />
             <main>{children}</main>

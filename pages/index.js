@@ -1,18 +1,19 @@
-import React from 'react';
+import React from "react";
 
-import Footer from '../components/AppFooter';
-import Screen from '../components/AppScreen';
-import Page from '../components/AppPage';
-import Container from '../components/AppContainer';
-import Preview from '../components/blog/Preview';
-import { components } from '../components/blog/Components';
+import Footer from "../components/AppFooter";
+import Screen from "../components/AppScreen";
+import Page from "../components/AppPage";
+import Container from "../components/AppContainer";
+import Social from "../components/Social";
+import Preview from "../components/blog/Preview";
+import { components } from "../components/blog/Components";
 
 function importAll(r) {
   return r.keys().map(r);
 }
 
 const previewItems = importAll(
-  require.context('../blog', false, /\.meta\.mdx$/)
+  require.context("../blog", false, /\.meta\.mdx$/)
 );
 
 function dateSortDesc(a, b) {
@@ -25,12 +26,12 @@ function dateSortDesc(a, b) {
 
 const Li = components.li;
 
-const getLi = path => ({ children }) => {
+const getLi = (path) => ({ children }) => {
   const { props } = children.props;
   const { href } = props;
-  const isHash = href && href.startsWith('#');
+  const isHash = href && href.startsWith("#");
   const element = React.cloneElement(children, {
-    props: isHash ? { ...props, href: path + href } : props
+    props: isHash ? { ...props, href: path + href } : props,
   });
 
   return <Li>{element}</Li>;
@@ -50,6 +51,11 @@ const items = previewItems
 
 export default () => (
   <Page title="Ohoshi.me">
+    <Social
+      image="/static/twitter-cards/ohoshi-logo.jpg"
+      title="Blog | Ohoshi.me"
+      url="https://blog.ohoshi.me"
+      description="The Ohoshi Blog" />
     <Screen offset={74}>
       <Container wide>{items}</Container>
     </Screen>
