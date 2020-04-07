@@ -1,66 +1,74 @@
-import { meta } from '../../blog/amp-ga-user-sync.meta.mdx'
-import { author } from '../../authors/ryoma-hoshino'
-import withPost from '../../modules/hoc/withPost'
+import { meta } from "../../blog/amp-ga-user-sync.meta.mdx";
+import { author } from "../../authors/ryoma-hoshino";
+import Image from "../../components/AppImage";
+import withPost from "../../modules/hoc/withPost";
 
 export const config = {
-  amp: true
-}
+  amp: true,
+};
 
-export default withPost({ ...meta, ...author })
+export default withPost({ ...meta, ...author });
 
-このブログも例によってGAを入れているのですが、最近AMPもはじめました。  
-AMPをはじめたくらいからGAの結果がちょっとおかしな感じになりました。新規ユーザーが異常に多い...  
-ちょっと嬉しくなりつつもそう甘くはないと自戒し、AMP導入でGAの計測結果がおかしくなった的なブログをいくつか目にしました。  
+このブログも例によって GA を入れているのですが、最近 AMP もはじめました。  
+AMP をはじめたくらいから GA の結果がちょっとおかしな感じになりました。新規ユーザーが異常に多い...  
+ちょっと嬉しくなりつつもそう甘くはないと自戒し、AMP 導入で GA の計測結果がおかしくなった的なブログをいくつか目にしました。  
 どうやら解消できそうなので、対応して新規ユーザーの少なさを再確認しようと思います。
 
-まず、おさらいしておくと、AMPの導入によって以下3つの方法でPageを閲覧することになります。  
+まず、おさらいしておくと、AMP の導入によって以下 3 つの方法で Page を閲覧することになります。
 
 a. Original Page
 　今までと同じ閲覧方法
 b. Original AMP Page
-　オリジナルドメイン下でのAMPページ閲覧
+　オリジナルドメイン下での AMP ページ閲覧
 c. Cached AMP Page
-　検索結果からCacheされたAMPページ閲覧
+　検索結果から Cache された AMP ページ閲覧
 
-2019/07時点で1,2のユーザーは同一ユーザーとして扱われるのですが、
-1,2 と 3は別のユーザーとして扱われます。  
-つまり、AMPのメジャーな遷移である、
-「検索」→「Cached AMP」→「Original Page」が2ユーザーとしてカウントされてしまうのです。  
+2019/07 時点で 1,2 のユーザーは同一ユーザーとして扱われるのですが、
+1,2 と 3 は別のユーザーとして扱われます。  
+つまり、AMP のメジャーな遷移である、
+「検索」→「Cached AMP」→「Original Page」が 2 ユーザーとしてカウントされてしまうのです。
 
-何時ぞやにGoogleがそれを解消できるようにしてくれたので、その方法をShareします。今回は例によってWordPressでの実装方法です。  
+何時ぞやに Google がそれを解消できるようにしてくれたので、その方法を Share します。今回は例によって WordPress での実装方法です。
 
-まず、Google AnalyticsのAMPページへの導入です。  
-下記をHeadに  
+まず、Google Analytics の AMP ページへの導入です。  
+下記を Head に
+
 ```html
-<script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
+<script
+  async
+  custom-element="amp-analytics"
+  src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"
+></script>
 ```
 
-下記をbody直下に  
+下記を body 直下に
+
 ```html
 <amp-analytics type="googleanalytics" id="hogehoge">
-	<script type="application/json">
-		{
-			"vars": {
-				"account": "UA-XXXXXXXXX-Y"
-			},
-			"triggers": {
-				"trackPageview" : {
-					"on": "visible",
-					"request": "pageview"
-				}
-			}
-		}
-	</script>
+  <script type="application/json">
+    {
+      "vars": {
+        "account": "UA-XXXXXXXXX-Y"
+      },
+      "triggers": {
+        "trackPageview": {
+          "on": "visible",
+          "request": "pageview"
+        }
+      }
+    }
+  </script>
 </amp-analytics>
 ```
 
 こんなかんじ。
 
-UserSyncするために、以下2つをheader.phpに追記します。  
+UserSync するために、以下 2 つを header.php に追記します。
 
-### 1. Metaタグ追記
-これはAMPページへの対応です。  
-AMPリクエスト識別関数`is_amp_endpoint()`を使って、AMPページのみにMetaタグを挿入します。
+### 1. Meta タグ追記
+
+これは AMP ページへの対応です。  
+AMP リクエスト識別関数`is_amp_endpoint()`を使って、AMP ページのみに Meta タグを挿入します。
 
 ```php
 <?php if(is_amp_endpoint()): ?>
@@ -68,38 +76,45 @@ AMPリクエスト識別関数`is_amp_endpoint()`を使って、AMPページの�
 <?php endif; ?>
 ```
 
-### 2. Google Analytics Script修正
+### 2. Google Analytics Script 修正
+
 これは通常ページへの対応です。
-GAの有効化Scriptはもともとあるかと思いますが、これをユーザーSyncに対応させます。  
-これはAMPページと非AMPページが同一ドメインに存在する場合の記述方法です。  
-createメソッドに`{'useAmpClientId': true}`とOptionを追記します。
+GA の有効化 Script はもともとあるかと思いますが、これをユーザー Sync に対応させます。  
+これは AMP ページと非 AMP ページが同一ドメインに存在する場合の記述方法です。  
+create メソッドに`{'useAmpClientId': true}`と Option を追記します。
 
 ```html
 <script>
-	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-	ga('create', 'UA-117915432-2', 'auto', {'useAmpClientId': true});
-	ga('send', 'pageview');
+  window.ga =
+    window.ga ||
+    function () {
+      (ga.q = ga.q || []).push(arguments);
+    };
+  ga.l = +new Date();
+  ga("create", "UA-117915432-2", "auto", { useAmpClientId: true });
+  ga("send", "pageview");
 </script>
-<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
 ```
 
 これだけ！  
-最後に動作確認を行います。確認手順はこんな感じです。  
+最後に動作確認を行います。確認手順はこんな感じです。
 
-- Webインスペクタ > Network Filterに`collect`
+- Web インスペクタ > Network Filter に`collect`
 - `cid`がユーザー識別子にあたるので、それを確認
 
 a. Original Page
-![Original AMP](https://res.cloudinary.com/hosswiii/image/upload/v1562819144/original.png)
+<Image src="https://res.cloudinary.com/hosswiii/image/upload/v1562819144/original.png" width="400" height="380" caption="Original Page" />
 b. Original AMP Page
-![Original AMP](https://res.cloudinary.com/hosswiii/image/upload/v1562819144/original_amp.png)
+<Image src="https://res.cloudinary.com/hosswiii/image/upload/v1562819144/original_amp.png" width="400" height="380" caption="Original AMP" />
+![Original AMP]()
 c. Cached AMP Page
-![Cached AMP](https://res.cloudinary.com/hosswiii/image/upload/v1562819818/cached_amp_y9mgeb.png)
+<Image src="https://res.cloudinary.com/hosswiii/image/upload/v1562819818/cached_amp_y9mgeb.png" width="400" height="380" caption="Cached AMP" />
 
 いいね！！！
 
-Originalページのcidが消滅し、AMPページと同一になるので、導入直後はAnalytics上のデータに変動があるかもしれません。  
+Original ページの cid が消滅し、AMP ページと同一になるので、導入直後は Analytics 上のデータに変動があるかもしれません。  
 単純にユーザー数が減るわけですもんね。  
-また、現在Cacheのドメインが`google.com`なのですが、`google.co.jp`で試してみたところ、cidに相違がありました。co.jpは対応がまだなようです。  
+また、現在 Cache のドメインが`google.com`なのですが、`google.co.jp`で試してみたところ、cid に相違がありました。co.jp は対応がまだなようです。
 
-しかしながら、これで正しいデータが取得できるようになりました！ぜひ試してみてください(＾ω＾)  
+しかしながら、これで正しいデータが取得できるようになりました！ぜひ試してみてください(＾ ω ＾)

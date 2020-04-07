@@ -1,42 +1,51 @@
-import { meta } from '../../blog/lazy-load-for-wp.meta.mdx'
-import { author } from '../../authors/ryoma-hoshino'
-import withPost from '../../modules/hoc/withPost'
+import { meta } from "../../blog/lazy-load-for-wp.meta.mdx";
+import { author } from "../../authors/ryoma-hoshino";
+import Image from "../../components/AppImage";
+import withPost from "../../modules/hoc/withPost";
 
 export const config = {
-  amp: true
-}
+  amp: true,
+};
 
-export default withPost({ ...meta, ...author })
+export default withPost({ ...meta, ...author });
 
-[Page Speed Insightに翻弄された男](https://www.ohoshi-tech.io/2019/06/03/page-speed-insighter)の続きです。  
-まだ画像のLazyLoadingを実装していなかったので、実装しました。  
-今回はWordPressのプラグインを使用することなく自前で用意します。  
+[Page Speed Insight に翻弄された男](https://www.ohoshi-tech.io/2019/06/03/page-speed-insighter)の続きです。  
+まだ画像の LazyLoading を実装していなかったので、実装しました。  
+今回は WordPress のプラグインを使用することなく自前で用意します。
 
-## Mediumはすばらしい
-<img src="https://res.cloudinary.com/hosswiii/image/upload/q_51/v1561724673/medium_qvm2lo.gif" alt="lazy" title="lazy">  
-MediumのLazy Loadingはすごく心地よいですよね！  
-この遅延ロードはかなり気に入っています。
-[Google  | Lazy Loading Images and Videos](https://developers.google.com/web/fundamentals/performance/lazy-loading-guidance/images-and-video/)にもそのテクニックは紹介されており、画像遅延ロードはもはや必須のメソッドとなりつつあります。  
-Reactとかだと[react-lazy-load-image-component](https://github.com/Aljullu/react-lazy-load-image-component#readme)なるものがあったりしていい感じです。  
-WordPressにもLazy Loading用のプラグインがあるのですが、うまい具合にならなかったので自分で実装してみました。  
+## Medium はすばらしい
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/q_51/v1561724673/medium_qvm2lo.gif"
+  alt="lazy"
+  width="516"
+  height="789"
+/>
+
+Medium の Lazy Loading はすごく心地よいですよね！ この遅延ロードはかなり気に入っています。
+[Google | Lazy Loading Images and Videos](https://developers.google.com/web/fundamentals/performance/lazy-loading-guidance/images-and-video/)にもそのテクニックは紹介されており、画像遅延ロードはもはや必須のメソッドとなりつつあります。
+React とかだと[react-lazy-load-image-component](https://github.com/Aljullu/react-lazy-load-image-component#readme)なるものがあったりしていい感じです。
+WordPress にも Lazy Loading 用のプラグインがあるのですが、うまい具合にならなかったので自分で実装してみました。
 ぜひ参考にしていただけたらと思います！
 
 ## Front End
-以下の流れとなるように記述していきます。  
 
-1. `class="lazy"`となっているimgタグを集める
-2. Intersection Observerを各要素に適用する
-3. 要素を検知したら、data-srcをsrcに置換する
+以下の流れとなるように記述していきます。
 
-以上の処理を`header.php`に記述していきます。  
+1. `class="lazy"`となっている img タグを集める
+2. Intersection Observer を各要素に適用する
+3. 要素を検知したら、data-src を src に置換する
 
-<pre class="wp-block-code"><code><script>
+以上の処理を`header.php`に記述していきます。
+
+```html
+<script>
   document.addEventListener("DOMContentLoaded", () => {
     let lazyImages = [].slice.call(document.querySelectorAll("img.lazy"));
-  
+
     if ("IntersectionObserver" in window) {
       let lazyImageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) {
             let lazyImage = entry.target;
             lazyImage.src = lazyImage.dataset.src;
@@ -46,83 +55,98 @@ WordPressにもLazy Loading用のプラグインがあるのですが、うま�
           }
         });
       });
-  
-      lazyImages.forEach(lazyImage => {
+
+      lazyImages.forEach((lazyImage) => {
         lazyImageObserver.observe(lazyImage);
       });
     }
   });
-</script></code></pre>
+</script>
+```
 
-Intersection Observerは直訳すると交差点観察。  
-「DOMがここまでスクロールしてきたらHogeHogeする」的なことを簡単に実装できるかなりいい感じのClassです！！  
-[Google  | Lazy Loading Images and Videos](https://developers.google.com/web/fundamentals/performance/lazy-loading-guidance/images-and-video/)でもIntersection Observerのテクニックは紹介されています。  
+Intersection Observer は直訳すると交差点観察。  
+「DOM がここまでスクロールしてきたら HogeHoge する」的なことを簡単に実装できるかなりいい感じの Class です！！  
+[Google | Lazy Loading Images and Videos](https://developers.google.com/web/fundamentals/performance/lazy-loading-guidance/images-and-video/)でも Intersection Observer のテクニックは紹介されています。
 
-FrontEndはこれで準備OK!  
+FrontEnd はこれで準備 OK!
 
 ## BackEnd
-FrontEndが👆のような処理をできるように土台を作ってあげましょう！
-以下の流れで処理を書いていきます。  
+
+FrontEnd が 👆 のような処理をできるように土台を作ってあげましょう！
+以下の流れで処理を書いていきます。
 
 1. イベントフック
-  add_filter関数で、the_contentイベントつまり、「記事ページの表示」イベントを登録します。  
-2. Imgタグの検出と置換
-  preg_replace_callback関数にて、正規表現を用いたimgタグの検出と、imgの要素を書き換えを行います。  
+  add_filter 関数で、the_content イベントつまり、「記事ページの表示」イベントを登録します。
+2. Img タグの検出と置換
+  preg_replace_callback 関数にて、正規表現を用いた img タグの検出と、img の要素を書き換えを行います。  
   具体的に、  
-    	a. `class="lazy"`の付与
-    	b. data-srcにオリジナルの画像を付与
-    	c. srcにダミー画像の付与(スクロールしてくる前、オリジナル画像がロードされる前の画像)
-  を行い、returnします。  
-  
+    a. `class="lazy"`の付与
+    b. data-src にオリジナルの画像を付与
+    c. src にダミー画像の付与(スクロールしてくる前、オリジナル画像がロードされる前の画像)
+  を行い、return します。
+
 以上の処理を、`function.php`に以下のように記述します。
 
-<pre class="wp-block-code">function filter_lazyload($content) {
+```php
+function filter_lazyload($content) {
   return preg_replace_callback(
-	  '/<img.*?src\s*=\s*[\"|\'](.*?)[\"|\'].*?>/i', 
-     function ($matches) {
-       $blurred_src = 'https://res.cloudinary.com/${ACCOUNT_ID}/image/fetch/q_50,w_10/' . $matches[1];
-       return '<img src="' . $blurred_src . '" data-src="' . $matches[1] . '" style="width: 80%;margin: 0 auto;display: flex;" class="lazy" alt="no-cache" />';
-     },
+    '/<img.*?src\s*=\s*[\"|\'](.*?)[\"|\'].*?>/i',
+      function ($matches) {
+        $blurred_src = 'https://res.cloudinary.com/${ACCOUNT_ID}/image/fetch/q_50,w_10/' . $matches[1];
+        return '<img src="' . $blurred_src . '" data-src="' . $matches[1] . '" style="width: 80%;margin: 0 auto;display: flex;" class="lazy" alt="no-cache" />';
+      },
       $content
   );
 }
-add_filter('the_content', 'filter_lazyload');</pre>
+add_filter('the_content', 'filter_lazyload');
+```
 
-この処理を通すとimgタグは以下のようになります。  
-<pre class="wp-block-code"><code><img style="width: 80%;margin: 0 auto;display: flex" class="lazy" alt="no-cache" src="https://res.cloudinary.com/${ACCOUNT_ID}/image/fetch/q_50,w_10/https://sample.com/image.png" data-src="https://sample.com/image.png"
-/></code></pre>
+この処理を通すと img タグは以下のようになります。
+
+```html
+<img
+  style="width: 80%;margin: 0 auto;display: flex"
+  class="lazy"
+  alt="no-cache"
+  src="https://res.cloudinary.com/${ACCOUNT_ID}/image/fetch/q_50,w_10/https://sample.com/image.png"
+  data-src="https://sample.com/image.png"
+/>
+```
 
 ダミーとして表示させる画像についてです。  
-Mediumでは、オリジナル画像の**低画質&極小**版を用いているようです。  
-  
-今回はその**低画質&極小**版を取得するために、[Cloudinary](https://cloudinary.com/)というサービスを使用します。  
-立ち位置的には画像版CDNです。加えてfetch APIも提供しており、URLにパラメータを指定することで任意の形に変換された画像を取得することができます。  
-詳しくは[Cloudinary Docs | Fetch remote images](https://cloudinary.com/documentation/fetch_remote_images)を参照してください。  
-個人でブログをやる程度であれば無料で使用し続けることができます。  
+Medium では、オリジナル画像の**低画質&極小**版を用いているようです。
 
-Fetch APIは以下のような形式となります。${}の部分は任意に指定してください。  
+今回はその**低画質&極小**版を取得するために、[Cloudinary](https://cloudinary.com/)というサービスを使用します。  
+立ち位置的には画像版 CDN です。加えて fetch API も提供しており、URL にパラメータを指定することで任意の形に変換された画像を取得することができます。  
+詳しくは[Cloudinary Docs | Fetch remote images](https://cloudinary.com/documentation/fetch_remote_images)を参照してください。  
+個人でブログをやる程度であれば無料で使用し続けることができます。
+
+Fetch API は以下のような形式となります。`${}` の部分は任意に指定してください。
+
 ```
 https://res.cloudinary.com/${ACCOUNT_ID}/image/fetch/${YOUR_PARAMS}/${ORIGIN_URL}
 ```
-${YOUR_PARAMS}に変換内容を指定していきます。  
-今回は、Quality: 2分の1 Width: 10pxのものを取得したいので `q_50,w_10`と指定します。簡単ですね！  
+
+`${YOUR_PARAMS}`に変換内容を指定していきます。  
+今回は、Quality: 2 分の 1 Width: 10px のものを取得したいので `q_50,w_10`と指定します。簡単ですね！
 
 ## どれくらい効果があるの？
-ぼくのブログの[Google Adsenseの審査に合格しました！](https://www.ohoshi-tech.io/2019/04/05/pass-google-adsense/)には記事中画像が1枚あります。  
+
+ぼくのブログの[Google Adsense の審査に合格しました！](https://www.ohoshi-tech.io/2019/04/05/pass-google-adsense/)には記事中画像が 1 枚あります。  
 オリジナル画像は**279KB**(デカっ)に対して、ダミー画像は**0.74KB**！
-初回ロードにおいて**278KB**の節約、**350分の1**になります！画像1枚でもかなりの効果です。  
+初回ロードにおいて**278KB**の節約、**350 分の 1**になります！画像 1 枚でもかなりの効果です。  
 たくさんあるんだったらなおさらですね！
 
 これで準備は整いました。こんな感じになりました！！
 
-<img src="https://res.cloudinary.com/hosswiii/image/upload/q_50/v1561724697/lazy_iibi79.gif" alt="lazy" title="lazy">  
+<Image src="https://res.cloudinary.com/hosswiii/image/upload/q_50/v1561724697/lazy_iibi79.gif" width="530" height="789" alt="lazy" />
 
 すごくいい感じ！  
-WordPressのカスタマイズはほとんどやったことありませんでしたが、簡単に実装することができました！  
-ぜひ試してみてください（＾ω＾）
+WordPress のカスタマイズはほとんどやったことありませんでしたが、簡単に実装することができました！  
+ぜひ試してみてください（＾ ω ＾）
 
-実装後のPage Speed Insight
+実装後の Page Speed Insight
 
-<img src="https://res.cloudinary.com/hosswiii/image/upload/q_70,w_600/v1561727454/psi90.png" alt="lazy" title="lazy">  
+<Image src="https://res.cloudinary.com/hosswiii/image/upload/q_70,w_600/v1561727454/psi90.png" width="600" height="353" alt="lazy" />
 
 いいね！！！
