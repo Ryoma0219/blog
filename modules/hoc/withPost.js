@@ -31,10 +31,8 @@ const Author = meta => {
       </div>
       <style jsx>{`
         .author {
-          display: inline-flex;
+          display: flex;
           align-items: center;
-          padding: 0 1rem;
-          margin-bottom: 0.5rem;
           white-space: nowrap;
         }
         img {
@@ -53,7 +51,7 @@ const Author = meta => {
         }
         .intro {
           color: #757575;
-          font-size: 12px;
+          font-size: 10px;
         }
         .twitter {
           font-size: 12px;
@@ -92,7 +90,7 @@ const HeaderImage = meta => (
           background-size: cover;
           background-position: center 50%;
           width: 100%;
-          min-height: 220px;
+          min-height: 300px;
         }
       `}</style>
     </div>

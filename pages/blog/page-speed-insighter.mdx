@@ -1,0 +1,107 @@
+import { meta } from "../../blog/page-speed-insighter.meta.mdx";
+import { author } from "../../authors/ryoma-hoshino";
+import withPost from "../../modules/hoc/withPost";
+import Image from "../../components/AppImage";
+
+export const config = {
+  amp: true,
+};
+
+export default withPost({ ...meta, ...author });
+
+[ほしのえんじにありんぐ](https://www.ohoshi-tech.io/)というブログを運営しています。  
+インフラ環境は Amazon EC2 で Wordpress 製のブログです。テーマは Sango を使っています。
+
+Google が提供する[Page Speed Insight](https://developers.google.com/speed/pagespeed/insights/)でブログのパフォーマンスを計測したところ、**39**点とのこと。  
+これはまずいなと思い、いくつかの施策を行なったところ、コンスタントに 80 点なかば、**一時 90 点を叩き出すようになりました**!!!
+
+インフラ環境はそのまま。Wordpress の設定だったり、リソース配置の工夫をすることで短時間でパフォーマンスの改善に成功しました。  
+改善するにあたり、[2019 Page Speed](https://notate.sh/post/eRDUs9Evpc0ky4IVCYv6)をかなり参考にさせていただきました。
+
+実際に行なった施策をまとめてみます。
+
+### 1. 画像用 CDN の使用
+
+これが一番効きます！！  
+1 つの記事ページに対して一つの画像が 1-3 倍のファイルサイズを持っていました。まずはこれを改善します。  
+Page Speed Insight をみても画像に関するありがたい言葉が列挙されていました。
+
+純粋に画像の取得速度をあげること、その上で画像のサイズを抑えることを目的として、[Cloudinary](https://cloudinary.com)を使用することにしました。  
+画像に特化した CDN でありながら、クライアントサイドで自由に Quaritly を指定できるのが魅力です。
+
+また、Wordpress プラグインが用意されているのもかなりの魅力です。画像の移行と画像の URL 変更がすぐにできるのでかなりよかったです。  
+[Auto Cloudinary](https://ja.wordpress.org/plugins/auto-cloudinary/)⬅︎ マジで便利です!!
+
+### 2. JavaScript の非同期ロード
+
+JavaScript のロードタグに`async`属性を追加します。Wordpress の`function.php`に一部加筆します。
+
+```php
+if(!is_admin()){
+  function replace_script_tag ( $tag ) {
+    if ( strpos( $tag, 'jquery.min.js' ) ) {
+      return str_replace( "type='text/javascript' ", '', $tag );
+    }
+    return str_replace( "type='text/javascript'", 'async', $tag );
+  }
+  add_filter( 'script_loader_tag', 'replace_script_tag' );
+}
+```
+
+注意事項として管理画面を async しないようにすること。jquery も async するとうまくいかなかったので追記しました。  
+管理画面を async しちゃうと投稿ページ行けなくなります。
+
+### 3. Cloud Front
+
+せっかく AWS に置いているので Cloud Front を使ってみました。  
+従来の`Load Balancer -> EC2` を`Cloud Front -> Load Balancer -> EC2` にしました。  
+管理画面系と php ファイルは Cache しないように以下のように設定しました。  
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/q_10/v1559574727/cloudfront-wp_gvk1z2.jpg"
+  width="725"
+  height="789"
+/>
+
+
+### 4. Wordpress プラグインの見直し
+
+必要ないんじゃないか？と思うプラグインを根こそぎやめました。 覚えている限り以下
+
+- All in One Pack SEO  
+  SEO 関連は Sango テーマ標準装備
+- Jetpack  
+  見てたのはアクセス数くらい。GA で十分かと。
+- SNS シェア系  
+  シェア数取得のために各 SNS のを叩いているため、パフォーマンスに影響するのでは？と判断。
+
+### 5. PWA 対応
+
+直接点数に影響はないのですが、静的リソースのキャッシングをしたり、ホーム画面に追加できるようにしたりすることで総合的な UX 向上に繋がると判断しました。  
+PWA で使用すると、スピード向上をダイレクトに感じることができます。
+
+PWA についてもプラグインが用意されています。僕は[PWA for WP & AMP](https://ja.wordpress.org/plugins/pwa-for-wp/)を使用しました。
+
+2019/6/6 追記
+
+### 6. CSS インライン化
+
+最後の一撃でした。15 点くらい上がりました。  
+ページで使われている CSS ファイルを調べてすべてベタ張りしました。  
+これでもいいのですが、カスタマイズした時に張り直したりと継続的な開発に向かないのでプラグインで対応しました。  
+使用したプラグインは [Autoptimize](https://ja.wordpress.org/plugins/autoptimize/) です。  
+CSS の項目を最適化するようにしてください。
+
+PWA についてもプラグインが用意されています。僕は[PWA for WP & AMP](https://ja.wordpress.org/plugins/pwa-for-wp/)を使用しました。
+
+## まとめ
+
+この辺りでしょうか。特に**画像の最適化**は点数向上にダイレクトに繋がります。15-20 点くらい上がった記憶。Wordpress 使ってる人はこの際に使ってみるといいかと思います！
+
+サイトの高速化っていろんな要素が絡んでかなり難しく思えますが、実はすぐにできることが多いです。
+上記の施策も 1 日あれば全てこなせるかと思います！  
+これらをするだけでも目に見えてサイトのスピードアップを体感することができます！
+
+**ぜひお試しを！！！**
+
+ただ、広告入れると目に見えてスコア悪くなりますね...笑

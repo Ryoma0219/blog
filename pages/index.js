@@ -42,7 +42,7 @@ const items = previewItems
     const previewComponents = { ...components, li: getLi(meta.link) };
 
     return (
-      <Preview key={meta.title} detail={index < 5} {...meta}>
+      <Preview key={meta.title} {...meta}>
         <Component components={previewComponents} />
       </Preview>
     );

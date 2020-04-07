@@ -1,0 +1,251 @@
+import { meta } from "../../blog/service-worker.meta.mdx";
+import { author } from "../../authors/ryoma-hoshino";
+import Image from "../../components/AppImage";
+import withPost from "../../modules/hoc/withPost";
+
+export const config = {
+  amp: true,
+};
+
+export default withPost({ ...meta, ...author });
+
+Service Worker は PWA(Progressive Web App)のオフライン操作や Push 通知を実装するための機能です。JavaScript で実装を行いますが、ブラウザとは別プロセスでバックグラウンドで動作するのが特徴です。
+オフライン操作の実現は巧みなキャッシュハンドリングによってなされています。
+Service Worker の基本的な書き方を学習したので、備忘録的な形でこのブログに残します。 PWA の話も気が向いたら残せたらと！
+Sample プロジェクトを Github に Push しました。 ご活用いただけたらと思います。Hosting には Firebase Hosting を利用しました。
+Github: [https://github.com/Ryoma0219/simple-pwa](https://github.com/Ryoma0219/simple-pwa) Firebase Hosting をやってみる: [https://firebase.google.com/docs/hosting/quickstart?hl=ja](https://firebase.google.com/docs/hosting/quickstart?hl=ja)
+
+### なぜ Service Worker 書こうと思ったか
+
+社内用ドキュメントを GatsbyJS という React の静的サイトジェネレータを使って書いています。これがまあなんたる超爆速爆速だこと。しかもオフラインでも動作したりします。しかしその反面、ガチガチなキャッシュによってデプロイしても反映されないといったデメリットを持ち合わせていました。 「デプロイしました！確認おなしゃす ！」 「？ なにも変わってないっぽいけど...」 「キャッシュ削除したら更新されるかもです」 的なありがちだけど時間食っちゃうような確認を極力減らしたいなという課題から、Service Worker で古いキャッシュを削除しよう！というのがゴールです。
+
+### Service Worker の確認方法
+
+Service Worker とキャッシュの状態は、Web インスペクタの Application タブで確認することができます。
+
+Service Worker の状態
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2019-05-02-22.05.07.png"
+    width="1024"
+    height="520"
+    alt=""
+  />
+</figure>
+
+Cache の状態
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2019-05-02-22.05.19.png"
+    width="1024"
+    height="416"
+    alt=""
+  />
+</figure>
+
+### Service Worker を書いていく
+
+**1.登録**
+
+対象のページで Service Worker を有効化させる処理です。通常はアプリケーションのルートに記述することが多いかなと思います。
+
+```javascript
+// Service Workerが有効なブラウザである場合のみ実行
+if ("serviceWorker" in navigator) {
+  // Service Workerの登録
+  // register()の引数にはService Workerの処理が書かれたファイルのpathを指定
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then(function (registration) {
+      console.log("Success ! Scope: ", registration.scope);
+    })
+    .catch(function (err) {
+      console.log("Failed ! Error: ", err);
+    });
+}
+```
+
+**Service Worker の処理を書いていく**
+
+Service Worker は固有の Event をトリガーに処理が走ります。 イベントリスナーを配備して、行いたい処理を書いていきます。 ここでは一番よく用いるであろうイベントを取り上げて紹介します。
+
+**2-1. install イベント**
+
+Service Worker の登録が成功した後に発火するイベントです。 ここでは主に、静的ファイルをキャッシュする処理を記述することになるかと思います。
+
+```javascript
+self.addEventListener("install", function (event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(async function (cache) {
+      skipWaiting();
+      cache.addAll(urlsToCache);
+    })
+  );
+});
+```
+
+何をやっているのかサクッと書いていきます。
+
+**waitUntil** waitUnitl 内に記述されたコードが成功しない限り install が完了しないことを保証してくれます。
+
+**cache.open** 引数に指定した文字列を名前とするキャッシュ空間を作成します。
+
+**skipWaiting** install → active 状態への移行を即時で実施するための関数です。 これを実行しないと active 状態になりません。
+
+**cache.addAll** cache.open で指定したキャッシュ空間に対象となるファイルを保存する関数です。
+
+これで対象の静的ファイルの保存に成功しました。
+
+実際に Web インスペクタの Cache Storage を見てみると以下のようになっていることがわかります。 Cache Storage には指定したキャッシュ空間が定義され、実際のキャッシュファイルが path-value 形式で保管されています。
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2019-05-03-17.53.53.png"
+    width="300"
+    height="254"
+    alt=""
+  />
+</figure>
+
+**2-2. activate イベント**
+
+Service Worker がアクティブ状態に移行した時に発火するイベントです。 ここでは、古いキャッシュの削除を行います。
+
+```javascript
+self.addEventListener("activate", function (event) {
+  event.waitUntil(
+    (function () {
+      caches.keys().then(function (oldCacheKeys) {
+        oldCacheKeys
+          .filter(function (key) {
+            return key !== CACHE_NAME;
+          })
+          .map(function (key) {
+            return caches.delete(key);
+          });
+      });
+      clients.claim();
+    })()
+  );
+});
+```
+
+キャッシュ空間に指定していない名前を検索し、caches.delete(key)で削除を行います。 Service Worker が active 状態になっても、実際に Service Worker が始動するのは再度ページを表示した時です。 **即時に操作を開始したい場合は、clients.claim()を実行します。**
+
+これで古いキャッシュの削除と、Service Worker の始動に成功しました。
+
+**2-3. fetch イベント**
+
+アプリケーションがリクエストを行った時に発生するイベントです。 画像や HTML の取得、API の実行に介入し、「Response がキャッシュにある場合、キャッシュを使う」というようなハンドリングを行うことができます。 プロキシサーバ的な使い方を実現できるということですね。
+
+```javascript
+self.addEventListener("fetch", function (event) {
+  console.log(event.request.url);
+  event.respondWith(
+    caches.match(event.request).then(function (response) {
+      if (response) return response;
+      var fetchRequest = event.request.clone();
+      return fetch(fetchRequest).then(function (response) {
+        if (!response || response.status !== 200 || response.type !== "basic") {
+          return response;
+        }
+        var responseToCache = response.clone();
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(event.request, responseToCache);
+        });
+        return response;
+      });
+    })
+  );
+});
+```
+
+**respondWith()** ブラウザの fetch 処理を横取りして、自身の処理として振舞うことができます。
+
+**caches.match()** Request 内容が cache に存在する場合、Promise に Response を乗せて返すことができます。
+
+match しない場合はそれ以下のコードで fetch Request をし、通常の Response を返却します。
+
+**cache.put()** 新しく取得した Response を**path-value**形式で cache に保管します。
+
+以上で、対象の静的ファイルの保存に成功しました。
+
+### 動作確認する
+
+[https://simple-pwa-hoshi.firebaseapp.com/](https://simple-pwa-hoshi.firebaseapp.com/)にプロジェクトをデプロイしました。
+
+**Service Worker が正しく動作し、Cache が保存されているか**
+
+Cache 名は"sample-v1" 初期のキャッシュ対象は、"index.html"と、"css/style.css"としました。
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-17.53.42.png"
+    width="300"
+    height="166"
+    alt=""
+  />
+</figure>
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-17.53.53.png"
+    width="300"
+    height="254"
+    alt=""
+  />
+</figure>
+
+**初めての訪問 **Cache Storage には、"index.html"と"css/style.css"が保管されていることがわかります。初めての訪問では、fetch イベントは走らないようにしています。
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-17.54.09.png"
+    width="300"
+    height="171"
+    alt=""
+  />
+</figure>
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-17.54.16.png"
+    width="300"
+    height="232"
+    alt=""
+  />
+</figure>
+
+**2 回目の訪問 **"index.html"と、"css/style.css"はキャッシュされたものが使用され、キャッシュに存在しない"main.js"はリクエストを行い、新たにキャッシュとして保管されています。
+
+Service Worker が正常に動作し、ファイルがキャッシュされていることがわかりました！
+
+**古いキャッシュが削除されているか **リリースに合わせてキャッシュ名を更新するのがスタンダードかと思います。 キャッシュ名を"sample-v1"から**"sample-v2"**に変更してデプロイし、"v1"が削除され"v2"が新たに保存されていることを確認します。
+
+古いキャッシュを削除する'activate'イベントの前に'install'イベントが走るので、一時的にキャッシュ名は 2 つになります。 その後の'activate'イベントで'sample-v1'キャッシュは削除されていることが確認できました！
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-18.43.27.png"
+    width="300"
+    height="171"
+    alt=""
+  />
+</figure>
+
+<figure class="wp-block-image">
+  <Image
+    src="https://www.ohoshi-tech.io/wp-content/uploads/2019/05/スクリーンショット-2019-05-03-18.43.39.png"
+    width="300"
+    height="173"
+    alt=""
+  />
+</figure>
+
+### さいごに
+
+基本的な Service Woker を記述することができました。 静的ファイルのキャッシュと、古いキャッシュ削除はもっとも基本的な操作でかつ不可欠な操作と思います。
+
+今回は静的ファイルの名前が固定なので、ベタ書きできましたが、Webpack などのバンドルを挟んだりするとファイル名に hash が振られたりします。その際の書き方だったり、スタバのサイト [https://app.starbucks.com/](https://app.starbucks.com/) など、PWA の成功事例などを調査したり、Service Worker を宣言的かつ柔軟に設定できる Workbox 　[https://developers.google.com/web/tools/workbox/](https://developers.google.com/web/tools/workbox/) などを触っていき、より実践的に Service Worker を扱えるようにしていきたいと思います！

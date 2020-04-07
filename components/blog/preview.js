@@ -1,11 +1,10 @@
-import Link from 'next/link';
-import Head from 'next/head';
-import formatDate from 'date-fns/format';
+import Link from "next/link";
+import moment from "moment";
 
-import Container from '../AppContainer';
-import Button from '../AppButton';
+import Container from "../AppContainer";
+import Button from "../AppButton";
 
-export default ({ type, thumbnail, detail, link, title, date, alt, children }) => {
+export default ({ type, thumbnail, link, title, date, alt, children }) => {
   return (
     <div className="post-preview">
       <style jsx>{`
@@ -31,6 +30,9 @@ export default ({ type, thumbnail, detail, link, title, date, alt, children }) =
         .date {
           margin-top: 0.4rem;
           margin-bottom: 1rem;
+        }
+        .date.mute {
+          color: #aaa;
         }
         amp-timeago {
           display: inline;
@@ -88,15 +90,16 @@ export default ({ type, thumbnail, detail, link, title, date, alt, children }) =
               </Link>
             </h3>
             <p className="f6 date mute">
+              {moment(date).format("YYYY/MM/DD (ddd)")}
             </p>
-            {detail && <section className="description f5">{children}</section>}
+            <section className="description f5">{children}</section>
             <div className="read-more">
               <Button href={link}>Read More →</Button>
             </div>
           </div>
           {thumbnail && (
             <div className="thumbnail">
-              <img src={thumbnail} alt={alt || ''} />
+              <img src={thumbnail} alt={alt || ""} />
             </div>
           )}
         </div>

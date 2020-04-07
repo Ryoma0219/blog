@@ -1,0 +1,53 @@
+import { meta } from '../../blog/ios-pwa-splash.meta.mdx'
+import { author } from '../../authors/ryoma-hoshino'
+import withPost from '../../modules/hoc/withPost'
+
+export const config = {
+  amp: true
+}
+
+export default withPost({ ...meta, ...author })
+
+iOS向けPWAはいくつかの点でAndroidに遅れを取っていますが、iOSのアップデートで細々と機能が増えているようです。
+
+最近の嬉しいアップデートといえばスワイプバック。  
+「戻る」ボタンを自前で持たなくてもよくなったってのと、使っててかなり不便に感じていたのでかなり嬉しいです。
+
+そういえばいつぞやのアップデートでSplash Screenもできるようになっていたのでメモ。
+
+## 1. Splash Screenの用意
+とにもかくにもリソースの用意。  
+Adobe XDで作成しました。  Sketchでも良いかも。  
+
+ひとまず以下のピクセルの画像を用意しました。
+
+| サイズ       | ピクセル
+|:-----------|:------------------------|
+|iPhone SE|640x1136|
+|iPhone 6, 6s, 7, 8|750x1334|
+|iPhone 6 Plus, 6s Plus, 7 Plus, 8 Plus|1242x2208   |
+|iPhone X, XS|1125x2436|
+
+詳しくはこちらを参照いただけると! [Apple / Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/ios/icons-and-images/launch-screen/)
+
+## 2. linkでリソースのロケーションを記述
+今回は4種のデバイスなのでこちらを記述しました。
+
+```html
+<link rel="apple-touch-startup-image" href="/public/splash/launch-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) " />
+<link rel="apple-touch-startup-image" href="/public/splash/launch-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+<link rel="apple-touch-startup-image" href="/public/splash/launch-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+<link rel="apple-touch-startup-image" href="/public/splash/launch-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+```
+
+## 3. metaタグ追加
+HOME画面からの起動時にURLバーを表示するかどうかを決めるタグです。
+
+```html
+<meta name="apple-mobile-web-app-capable" content="yes" />
+```
+
+**これだけ！！！**
+
+遅いよ！って言われがちなSafariのPWA対応ですが、だんだんと使えることが増えています。  
+マイナーアップデート時にもアップデートがある可能性があるので目が離せませんね。

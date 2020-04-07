@@ -1,0 +1,242 @@
+import { meta } from "../../blog/py-json-validator.meta.mdx";
+import { author } from "../../authors/ryoma-hoshino";
+import withPost from "../../modules/hoc/withPost";
+
+export const config = {
+  amp: true,
+};
+
+export default withPost({ ...meta, ...author });
+
+Python をいじったことはあるけど、初めてちゃんとしたアプリを作る機会ができました。  
+普段は JavaScript を使用している、Python 修行中の身です。
+
+Web API で飛んでくる Json 形式パラメータのバリデーションチェックメモです。  
+ちなみにフレームワークとして Flask を選んでいます。導入が簡単で DB は別に用意しているためです。
+
+いろいろみてると、デコレータ関数と jsonschema クラスが使えそうなので使ってみました。
+
+### デコレータ関数
+
+`元の関数に任意の機能を追加できる`という解釈でいます。  
+`＠func_name` 的な感じでかっこよく使えるのもいいなあと思います。  
+パフォーマンス計測を各関数に簡単に追加できるな〜なんてイメージしました。  
+デコレータは引数にもとの関数を持つので、前後に処理を追加したりオーバーライドしたりできます。
+
+簡単に、元の関数の処理前にデコレータでの処理してみます。
+
+```python
+from functools import wraps
+
+
+def hello_decorator(f):
+    @wraps(f)
+    def wrapper(*args, **kw):
+        print('Hello Decorator')
+        return f(*args, **kw)
+    return wrapper
+
+
+@hello_decorator
+def func():
+    print('Hello World')
+```
+
+```
+Hello Decorator
+Hello World
+```
+
+いい感じ！
+
+### バリデーションチェック
+
+JSON パラメータのチェックは以下の 2 段階で行います。
+
+1. JSON 形式かどうか
+2. 期待した値が来ているか
+
+順を追ってみていきます。
+
+#### 1. JSON 形式かどうか
+
+```python
+import json
+from functools import wraps
+from werkzeug.exceptions import BadRequest, Forbidden
+from flask import request
+
+
+def validate_json(f):
+    @wraps(f)
+    def wrapper(*args, **kw):
+        try:
+            request.json
+        except BadRequest as e:
+            message = "Please post json format"
+            return message, 400
+        return f(*args, **kw)
+    return wrapper
+```
+
+こんなかんじ。
+
+#### 2. 期待した値が来ているかどうか
+
+```python
+import json
+from functools import wraps
+from jsonschema import validate, ValidationError
+from flask import request
+
+
+def validate_schema(schema_name):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kw):
+            file_name = "path/to/{}.json".format(os.getcwd(), schema_name)
+            with open(file_name) as file:
+                schema = json.load(file)
+            try:
+                validate(request.json, schema)
+            except ValidationError as e:
+                message = "Request parameter is invalid"
+                return message, 400
+            return f(*args, **kw)
+        return wrapper
+    return decorator
+```
+
+こんな感じ。
+リクエストパラーメータの JSON Schema を用意しておきます。  
+各 API にデコレータ引数を当てることで、API に対応したバリデーションチェックをおこないます。  
+デコレータ関数に引数を設けると、一段階層が深くなります。
+
+validate 関数で一発でチェックできるので最高ですね。あと、言語に依存しない形式でファイルを保持できるのも Good。  
+Schema は[JSONschema.net](https://jsonschema.net/)で作りました。
+以下のような JSON オブジェクトが存在する場合、
+
+```json
+{
+  "userId": "hoge",
+  "familyName": "hoshino",
+  "age": 25,
+  "birthday": "19940219",
+  "cost": 1000,
+  "address": {
+    "prefecture": "pre",
+    "city": "city",
+    "address1": "1",
+    "address2": "2"
+  }
+}
+```
+
+↑ のようば JSON オブジェクトが存在する場合、
+
+↓ のような Schema を吐き出すことができます。  
+Required や、細かい Validation はここで設定できます。
+
+```json
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "required": ["userId", "familyName", "age", "birthday", "cost", "address"],
+  "properties": {
+    "userId": {
+      "$id": "#/properties/userId",
+      "type": "string",
+      "title": "The Userid Schema",
+      "default": "",
+      "examples": ["hoge"],
+      "pattern": "^(.*)$"
+    },
+    "familyName": {
+      "$id": "#/properties/familyName",
+      "type": "string",
+      "title": "The Familyname Schema",
+      "default": "",
+      "examples": ["hoshino"],
+      "pattern": "^(.*)$"
+    },
+    "age": {
+      "$id": "#/properties/age",
+      "type": "integer",
+      "title": "The Age Schema",
+      "default": 0,
+      "examples": [25]
+    },
+    "birthday": {
+      "$id": "#/properties/birthday",
+      "type": "string",
+      "title": "The Birthday Schema",
+      "default": "",
+      "examples": ["19940219"],
+      "pattern": "^(.*)$"
+    },
+    "cost": {
+      "$id": "#/properties/cost",
+      "type": "integer",
+      "title": "The Cost Schema",
+      "default": 0,
+      "examples": [1000]
+    },
+    "address": {
+      "$id": "#/properties/address",
+      "type": "object",
+      "title": "The Address Schema",
+      "required": ["prefecture", "city", "address1", "address2"],
+      "properties": {
+        "prefecture": {
+          "$id": "#/properties/address/properties/prefecture",
+          "type": "string",
+          "title": "The Prefecture Schema",
+          "default": "",
+          "examples": ["pre"],
+          "pattern": "^(.*)$"
+        },
+        "city": {
+          "$id": "#/properties/address/properties/city",
+          "type": "string",
+          "title": "The City Schema",
+          "default": "",
+          "examples": ["city"],
+          "pattern": "^(.*)$"
+        },
+        "address1": {
+          "$id": "#/properties/address/properties/address1",
+          "type": "string",
+          "title": "The Address1 Schema",
+          "default": "",
+          "examples": ["1"],
+          "pattern": "^(.*)$"
+        },
+        "address2": {
+          "$id": "#/properties/address/properties/address2",
+          "type": "string",
+          "title": "The Address2 Schema",
+          "default": "",
+          "examples": ["2"],
+          "pattern": "^(.*)$"
+        }
+      }
+    }
+  }
+}
+```
+
+これで準備できました。
+呼び出す側はこんな感じでめちゃシンプル。
+
+```python
+@validate_json
+@validate_schema(schema_name='create_user')
+def post(self, project_id):
+    # Your function...
+```
+
+API を叩いた時に、パラメータに不備がある場合は 400 エラーを返してくれます。  
+JSON のチェックはもちろんなのですが、デコレータも便利でスマートなので、積極的に使っていく所存です。

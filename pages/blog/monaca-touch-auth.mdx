@@ -1,0 +1,359 @@
+import { meta } from "../../blog/monaca-touch-auth.meta.mdx";
+import { author } from "../../authors/ryoma-hoshino";
+import Image from "../../components/AppImage";
+import withPost from "../../modules/hoc/withPost";
+
+export const config = {
+  amp: true,
+};
+
+export default withPost({ ...meta, ...author });
+
+今年の夏の Monaca UG にて発表したテーマです。
+
+また、[Monaca Advent Calendar](https://adventar.org/calendars/3073) 21 日目の記事です(無理やりねじ込みました)。
+
+主な登場人物は、MonacaIDE・Vue.js・Cordova プラグインです。
+
+[Monaca](https://ja.monaca.io/)はハイブリッドアプリの開発環境です。インターネットに繋がる環境であればすぐにモバイルアプリを開発することができます。ローカルでの開発向けに CLI も提供されており、大規模な開発・チーム開発にも対応できます。
+
+ハイブリッドアプリは UI・ロジック部分のほとんどを HTML5 で構築でき、ワンソースでマルチプラットフォームのモバイルアプリを構築することができます。
+
+しかしながら、指紋認証などのネイティブレイヤーの機能を利用するには、Cordova プラグインが必要です。Monaca では Camera, GPS などの基本的な Cordova プラグインが標準で入っていますが、そうでない場合は自分で導入する必要があります。
+
+今回は公開されている指紋認証プラグインのうち、[**cordova-plugin-keychain-touch-id**](https://github.com/sjhoeksma/cordova-plugin-keychain-touch-id)を導入し、指紋認証を実装してみようと思います。指紋認証プラグインは何種類か存在しますが、両 OS 向けに機能が提供されているこのプラグインを使用することにします。
+
+この記事では、
+
+```
+1. Monaca IDEでのプロジェクト作成
+2. Cordovaプラグイン追加
+3. 指紋認証ロジック実装
+4. カスタムデバッガーでの実機確認
+```
+
+の流れを一通りさらっていきます。
+
+↓ 出来上がりはこんな感じです！↓
+[video width="406" height="720" mp4="https://www.ohoshi-tech.io/wp-content/uploads/2018/12/shimon.mp4"][/video]
+
+早速アプリを作っていきます。**(※使用する[cordova-plugin-keychain-touch-id](https://github.com/sjhoeksma/cordova-plugin-keychain-touch-id)の使用には Pro プランへの登録が必要です。2 週間くらい無料で使用できるので試してみてはいかがでしょうか？)**
+
+検証環境は以下です。
+
+```
+Cordovaバージョン：7.1.0
+Cordovaプラグインバージョン：3.3.0
+検証端末：iPhone 7 SE (iOS 11.2.1)
+```
+
+開発環境は Monaca IDE、フレームワークには Vue.js を使用します。Monaca IDE が 2018 年夏にアップデートされ、以前までできなかった React などのフレームワークを使用した開発が IDE でできるようになりました！
+
+Monaca のページは[こちら](https://ja.monaca.io/)です。3 分程度でサインアップが完了します。
+
+## Monaca IDE でプロジェクトの作成
+
+画面左上【新しいプロジェクトを作る】
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/v1558012012/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2018-12-02-23.02.11_pff9i2.png"
+  alt=""
+  width="300"
+  height="79"
+/>
+
+```
+テンプレートの種類: 「フレームワークテンプレート」
+フレームワーク: Vue.js
+テンプレート: OnsenUI V2 Vue Navigation
+プロジェクトの情報: お好きな名前を!(ぼくはTouch Authにしました)
+作成
+```
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/v1558012010/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2018-12-02-23.03.49_uuhlxd.png"
+  alt=""
+  width="300"
+  height="110"
+/>
+
+ダッシュボードにプロジェクトが作成されるので、選択し「クラウド IDE で開く」をクリックしてください。
+
+プロジェクトを開くと IDE が開きます。Cordova プラグインを追加します。
+
+「設定」タブから「Cordova プラグインの管理」を選択。
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/v1558012008/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2018-12-02-23.18.35_bbgzez.png"
+  alt=""
+  width="300"
+  height="162"
+/>
+
+「Cordova プラグインのインポート」https://github.com/sjhoeksma/cordova-plugin-keychain-touch-id を入力し、OK
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/h_142,w_300/v1558012005/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2018-12-02-23.21.14_ntwn5u.png"
+  alt=""
+  width="300"
+  height="142"
+/>
+
+真ん中に keychain-touch-id が追加されました！
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/v1558011991/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2018-12-02-23.22.36_zbcgu8.png"
+  alt=""
+  width="300"
+  height="170"
+/>
+
+※ここで追加した Cordova プラグインは、ビルドして初めて使えるようになります。
+
+## 指紋認証ロジック実装
+
+指紋認証ロジックを大きく 4 つに分けて書いていきます。
+
+```
+指紋認証対応端末かどうかをチェックする
+指紋認証を使ってキーを登録する
+認証情報を削除する
+認証情報が存在するかをチェックする
+指紋認証をトリガーにしてキーを取り出す。
+```
+
+ここ実装する指紋認証とは、「指紋情報をトリガーにして値を取り出すこと」をさします。
+
+### 1.指紋認証対応端末かどうか
+
+```javascript
+if (window.plugins) {
+  window.plugins.touchid.isAvailable(
+    () => {
+      console.log("できるよ");
+    },
+    () => {
+      console.log("対応してないよ");
+    }
+  );
+}
+```
+
+### 2.指紋認証を使ってキーを登録する
+
+```javascript
+window.plugins.touchid.save("userInfo", JSON.stringify(this.userInfo));
+```
+
+今回は ID, Password を JSON 形式の Object で値を登録することにしました。第 1 引数には key 値, 第 2 引数に value を指定します。保存できるのは文字列のみです。Object を保存したい場合は JSON.stringify(object)で JSON 文字列に変換してください。
+
+### 3.認証情報を削除する
+
+```javascript
+window.plugins.touchid.delete(
+  "userInfo",
+  () => {
+    console.log("削除できた");
+  },
+  () => {
+    console.log("削除できなかった");
+  }
+);
+```
+
+第 2 引数で指定した key 値に紐づく値を削除します。
+
+### 4.認証情報が存在するかチェックする
+
+```javascript
+window.plugins.touchid.has(
+  "userInfo",
+  () => {
+    // 存在すれば指紋認証ダイアログ表示
+    this.verify();
+  },
+  () => {
+    // keyが存在しない
+    console.log("認証情報がない");
+  }
+);
+```
+
+Success の場合、Login 処理を実行するようにします。
+
+### 5.指紋認証をトリガーにして値を取り出す
+
+```javascript
+window.plugins.touchid.verify(
+  "userInfo",
+  "タッチしてください",
+  (userInfo) => {
+    alert(JSON.stringify(userInfo));
+  },
+  (error) => {
+    console.log("できない");
+  }
+);
+```
+
+このように各処理を表現します。
+
+完成版のソースはこんな感じです。
+
+```javascript
+<template>
+  <v-ons-page>
+    <custom-toolbar>ログインしてください!</custom-toolbar>
+    <ons-fab position="bottom left" @click="canTouchAuth()">
+      <ons-icon icon="github-alt"></ons-icon>
+    </ons-fab>
+    <ons-fab position="bottom right" @click="deleteTouchInfo()">
+      <ons-icon icon="trash"></ons-icon>
+    </ons-fab>
+    <br />
+    <v-ons-list>
+      <v-ons-list-header>ID</v-ons-list-header>
+      <v-ons-list-item>
+        <v-ons-input placeholder="Input your id" float v-model="userInfo.id"></v-ons-input>
+      </v-ons-list-item>
+      <v-ons-list-header>Password</v-ons-list-header>
+      <v-ons-list-item>
+        <v-ons-input placeholder="Input your password" float v-model="userInfo.password"></v-ons-input>
+      </v-ons-list-item>
+    </v-ons-list>
+    <br />
+    <div style="text-align: center;">
+      <v-ons-button @click="login()" :disabled="!canSave">ログイン</v-ons-button>
+    </div>
+  </v-ons-page>
+</template>
+
+<script>
+  import customToolbar from './CustomToolbar';
+  import page2 from './Page2';
+  import ons from 'onsenui'
+  export default {
+    data () {
+      return {
+        userInfo: {
+          id: '',
+          password: ''
+        }
+      }
+    },
+    methods: {
+      canTouchAuth() {
+        // 指紋認証可能か
+        window.plugins.touchid.isAvailable(() => {
+          ons.notification.alert('この端末は指紋認証が可能です', {title: 'Yeah !'});
+        }, () => {
+          ons.notification.alert('この端末では指紋認証ができません', {title: 'hmmmm !'});
+        })
+      },
+      verify() {
+        console.log(window.plugins.touchid.verify)
+        window.plugins.touchid.verify('userInfo', 'タッチしてください', (userInfo) => {
+          // ログイン処理
+          this.login(true)
+        },
+        (error) => {
+          ons.notification.alert('認証に失敗しました')
+        });
+      },
+      // ログインパスワードをキーチェーンに保存する
+      login(isAbleTouchAuth) {
+        ons.notification.alert('ログイン成功しました', {title: 'Yeah !',
+          callback: () => {
+            if (!isAbleTouchAuth) {
+              this.confirmNextShimonLogin();
+            }
+            this.pageStack.push(page2);
+          }
+        })
+      },
+      confirmNextShimonLogin() {
+        if (window.plugins) {
+          ons.notification.confirm({
+            message: '次回から指紋認証ログインが可能です。n指紋認証ログインしますか？',
+            callback: (idx) => {
+              if (idx === 1) {
+
+                // 入力されたID,Passwordを登録されている指紋と紐付けます
+                window.plugins.touchid.save('userInfo', JSON.stringify(this.userInfo));
+
+                window.plugins.touchid.verify('userInfo', 'タッチしてください', (userInfo) => {
+                  ons.notification.alert('認証できました', {title: '成功！'});
+                },
+                // キーが登録されていない場合は-1が帰ってくる
+                (hoshino)  => {
+                  alert(JSON.stringify(hoshino))
+                });
+              } else {
+                ons.notification.alert('設定画面からも指紋認証設定が可能です。', {title: 'おしらせ'});
+              }
+            }
+          });
+        }
+      },
+      deleteTouchInfo() {
+        if (window.plugins) {
+          window.plugins.touchid.delete('userInfo', () => {
+            ons.notification.alert('指紋認証設定を削除しました', {title: '認証設定削除'});
+          });
+        }
+      }
+    },
+    props: ['pageStack'],
+    components: { customToolbar },
+    computed: {
+      canSave () {
+        return this.userInfo.id &amp;&amp; this.userInfo.password
+      }
+    },
+    mounted () {
+      document.addEventListener('deviceready', () => {
+        // キー'userInfo' が存在するかどうか
+        window.plugins.touchid.has('userInfo', () => {
+          // 存在すれば指紋認証ダイアログ表示
+          this.verify();
+        }, () => {
+          // keyが存在しない
+          console.log('認証情報がない');
+        });
+      }, false);
+    }
+  }
+</script>
+```
+
+## カスタムデバッガービルドでの実機確認
+
+指紋認証機能は実機でしかできません。Monaca アプリの実機へのインストールは、[カスタムデバッガービルドもしくはデバッグビルド](https://docs.monaca.io/ja/products_guide/debugger/installation/debugger_ios/#%E3%82%AB%E3%82%B9%E3%82%BF%E3%83%A0%E3%83%93%E3%83%AB%E3%83%89%E7%89%88-monaca-%E3%83%87%E3%83%90%E3%83%83%E3%82%AC%E3%83%BC%E3%81%AE%E3%83%93%E3%83%AB%E3%83%89%E6%96%B9%E6%B3%95)が必要です。プランを Pro 以上にし(2 週間くらい無料)、iOS の場合は[証明書の発行](https://docs.monaca.io/ja/products_guide/monaca_ide/build/ios/build_ios/)を済ませてください。ここではこれらが済んでいる前提で進めます。ここからは一瞬です。
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/v1558011986/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2018-12-03-0.03.45_gh7e8u.png"
+  alt=""
+  width="300"
+  height="99"
+/>
+
+今回はカスタムデバッガービルドを実行します。証明書を選択し「ビルドを開始する」クリック。ビルドが完了すると、QR コードとダウンロードリンクが表示されます。
+
+<Image
+  src="https://res.cloudinary.com/hosswiii/image/upload/v1558011984/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2018-12-03-0.08.14_uvohy1.png"
+  alt=""
+  width="300"
+  height="101"
+/>
+
+QR コードを読み取ると、指紋認証プラグインが追加された Monaca デバッガーがインストールされます。プロジェクトを開いて実機テストしてみてください！
+
+Monaca のカスタムデバッガービルドを使えば、変更したソースは自動で読み込まれます。アプリのソースコードを変更したらまたビルド...なんてことにはなりません。めっちゃ便利。
+
+## おわりに
+
+モバイルアプリの開発環境はありふれています。Monaca の良さは、<span class="big">HTML5 で開発できること、ビルド周りの手軽さ</span>だと思っています。ビルド環境の構築は iOS, Android ともに時間と体力が必要ですが、Monaca がそのあたりを担ってくれるので非常にありがたいです。
+
+今回試した指紋認証プラグインはかなり実用的だと思っています。是非とも Monaca アプリに指紋認証を追加してみてください！
+
+ソースコードは[こちら](https://github.com/Ryoma0219/vue-monaca-touch)にアップしてあります。

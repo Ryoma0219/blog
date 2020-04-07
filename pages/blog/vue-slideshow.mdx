@@ -1,0 +1,125 @@
+import { meta } from "../../blog/vue-slideshow.meta.mdx";
+import { author } from "../../authors/ryoma-hoshino";
+import Image from "../../components/AppImage";
+import withPost from "../../modules/hoc/withPost";
+
+export const config = {
+  amp: true,
+};
+
+export default withPost({ ...meta, ...author });
+
+仕事で[Vue.js](https://jp.vuejs.org/index.html)を使ったアプリを構築しています。Vue.js は今もっともアツい JavaScript フレームワークです。数ある JS フレームワークでも日本語ドキュメントの充実度は随一です。学習コストが低く、小さい規模から始められることができます。
+
+またわたしはスライドを作るのが好きで、オンラインスライド作成サービス[Slides.com](https://slides.com/)で、50 こ以上のスライドを作成したりしています。
+
+Vue のイケてるライブラリを紹介する[Vegibit](https://vegibit.com/27-awesome-vuejs-libraries/)で、**Vue.js でスライドを作れる**というなんとも私向けのライブラリを見つけたので、試してみようと思います！
+
+それがこちら、[Eagle.js](https://zulko.github.io/eaglejs-demo/#/)です。
+
+<Image
+  src="https://vegibit.com/wp-content/uploads/2018/05/eaglejs.png"
+  alt="Eagle.js"
+  width="760"
+  height="189"
+/>
+
+**A Slideshow framework for hackers**と謳っているように、プログラマー向けのスライド作成フレームワークといったところでしょうか。  
+**Eagle aims at offering a simple and very hackable API so you can get off the beaten tracks and craft the slideshows you really want.** とも書いてあり、シンプルかつ高い拡張性で本当にやりたいことが実現できるのが特徴だそうです。
+
+デモ,ドキュメントを見てみると、animation, transition, methods 等々豊富な API を備えており、オンリーワンな渾身のスライドが作成できそうです！！使い方もスライドで示してくれて、試したい！って思わせてくれますね。
+
+デモは[こちら](https://zulko.github.io/eaglejs-demo/#/)でご確認いただけます！
+
+さっそく動かしていきます！今回はデモ版のものをインストールします。node.js は導入済みの前提です。  
+node.js の導入  
+[windows](https://qiita.com/taiponrock/items/9001ae194571feb63a5e)  
+[mac](https://qiita.com/kyosuke5_20/items/c5f68fc9d89b84c0df09)
+
+```
+git clone https://github.com/Zulko/eaglejs-demo.git
+cd eagle-demo
+npm install
+npm run dev
+```
+
+ディレクトリ構成を見ていきます。編集対象となる src 配下を抜粋します。
+
+```
+├── App.vue
+├── Home.vue
+├── logo.svg
+├── main.js
+└── slideshows
+    ├── eagle-recipes
+    │             ├── DemoSlideshow.vue
+    │             ├── EagleRecipes.vue
+    │             ├── animated.svg
+    │             ├── eagle-jam.png
+    │             └── eagle-jam.svg
+    ├── first-slideshow
+    │             └── FirstSlideshow.vue
+    ├── introducing-eagle
+    │             ├── AwesomeEmbeddedSlideshow.vue
+    │             ├── AwesomeInsertedSlide.vue
+    │             ├── Chart.vue
+    │             ├── ExampleImageSlideshow.vue
+    │             ├── FiguresSlide.vue
+    │             ├── IntroducingEagle.vue
+    │             ├── assets
+    │             │            ├── icons
+    │             └── components
+    │                  └── EndCredits.vue
+    ├── slideshows.js
+    └── themes-slideshow
+        ├── ThemesSlideshow.vue
+        └── assets
+```
+
+立ち上げた時の top 画面が Home.vue のようです。そして Home.vue に表示されている 4 メニューがそれぞれ、slideshows 配下にある 4 つのディレクトリに当たるようです。
+
+今回はミニマムテンプレートにあたる first-slideshow をみてみます！
+
+```pug
+<template lang='pug'>
+#MyFirstSlideshow
+  .eg-slideshow
+    slide
+      h1 Hi there !
+      h4 This is your first slideshow !
+
+    slide(enter='bounceInRight' leave='fadeOut')
+      h3 Hey modify me !
+      p.
+        Come on modify me ! If you are running the development server,
+        you will see the changes take effect immediately
+
+    slide(enter='fadeIn')
+      h3 Want cool effects?
+      p.
+        Code your own, or try stealing for the other slideshows !
+</template>
+```
+
+`<template>` をいじっていけば全てのスライドを作成できそうです。また pug 形式で書かれており、非常にスッキリしたマークアップになっています。
+
+pug とは JavaScript のテンプレートエンジンってやつで、HTML の記述を効率化できます。CSS でいう Sass だったり Stylus だったりと同じような立ち位置って感じですかね。
+
+Vue.js では`<template lang='pug'>`と指定することで pug 形式の記述ができるようです。便利！
+
+使い方を簡単にまとめると...
+
+- `<template lang='pug'>` で pug 形式に。より直感的に書ける
+- ページの区切りは `slide` タグ
+- `mixins: [ eagle.slideshow ]` 指定で、標準搭載の option や methods を注入
+- `slide(enter='hoge' leave='fuga')` でページのアニメーション指定
+- `eg-transition(enter='hoge' leave='fuga')` でページ内コンポーネントへのアニメーション指定
+- HTML, Vue に慣れていれば好き放題できる！
+- build コマンドで単一 HTML ファイルに吐き出される
+
+build コマンドで単一 HTML に出力でき、持ち運びに便利です。さらにプレゼンテーションモードも備えています。
+
+**Eagle.js がよりよいスライドのための機能を提供し、Vue.js が自由なスライド作成を可能にしてくれます。**
+
+非常に多くの種類の(デモ)[https://zulko.github.io/eaglejs-demo/#/]を用意されています。  
+凝りに凝ったスライドを作成してみたい方、Vue の勉強がてらに試してみてはいかがでしょうか。
