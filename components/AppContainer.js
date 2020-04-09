@@ -43,7 +43,7 @@ const Container = ({
       // CSS only media query for mobile
       @media screen and (max-width: 640px) {
         div {
-          padding: ${padding ? '2rem' : '0'} ${wide ? '0' : '1rem'};
+          padding: ${padding ? '2rem' : '0'} ${wide ? '0' : '2rem'};
         }
       }
     `}

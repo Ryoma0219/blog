@@ -67,9 +67,6 @@ export default ({ type, thumbnail, link, title, date, alt, children }) => {
           .post-preview {
             padding: 1.5rem 0;
           }
-          .preview-layout {
-            flex-direction: column-reverse;
-          }
           .thumbnail {
             width: 100%;
             margin-left: 0;
