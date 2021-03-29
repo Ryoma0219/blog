@@ -11,6 +11,9 @@ const withMDX = nextMDX({
 const nextConfig = {
   pageExtensions: ['js', 'mdx'],
   experimental: {
+    amp: {
+      skipValidation: true
+    },
     redirects() {
       return [
         {
