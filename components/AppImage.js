@@ -37,6 +37,8 @@ class Image extends Component {
       ...rest
     } = this.props;
 
+    console.log(rest);
+
     const aspectRatio = `${String((height / width) * 100)}%`;
     return (
       <IObserver
@@ -77,7 +79,7 @@ class Image extends Component {
                 ) : (
                   <amp-img
                     layout="responsive"
-                    src={rest.src}
+                    src={rest.src || 'data:image/gif;base64,R0lGODlhAQABAGAAACH5BAEKAP8ALAAAAAABAAEAAAgEAP8FBAA7'}
                     width={width}
                     height={height}
                     alt={rest.alt}

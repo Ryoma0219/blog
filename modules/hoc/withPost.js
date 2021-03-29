@@ -15,7 +15,6 @@ import { components } from "../../components/blog/Components";
 const Author = (meta) => {
   return (
     <div className="author">
-      <Image src={meta.avatar} width={40} height={40} margin={0} authorIcon />
       <div className="name f5">
         <span className="real-name">
           {meta.name}
