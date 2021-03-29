@@ -19,14 +19,6 @@ const Author = (meta) => {
       <div className="name f5">
         <span className="real-name">
           {meta.name}
-          <a
-            href={`https://twitter.com/${meta.twitter}`}
-            className="twitter"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            @{meta.twitter}
-          </a>
         </span>
         <div className="intro">{meta.intro}</div>
       </div>
